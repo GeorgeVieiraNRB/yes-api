@@ -10,17 +10,6 @@ datasource db {
   //url      = env("DATABASE_URL")
 }
 
-// =========================================================
-// ENUMS FOR DATA INTEGRITY (CRM/ERP Best Practices)
-// =========================================================
-/*
-enum MovementType {
-  ADD
-  SUBTRACT
-  TRANSFER
-}
-*/
-
 
 enum ApprovalDecisionType {
   APPROVED
@@ -369,7 +358,7 @@ model ApprovalDecision {
   // and one of the profiles allowed for the approval step.
   profileId       String               @db.Uuid
   profile         Profile              @relation(fields: [profileId], references: [id])
-  decision        ApprovalDecisionType
+  isApproved      Boolean?             @default(false)
   observation     String?              @db.Text
   decidedAt       DateTime             @default(now())
 
@@ -378,7 +367,6 @@ model ApprovalDecision {
 
   @@unique([orderApprovalId, userId])
   @@index([profileId])
-  @@index([decision])
   @@map("ApprovalDecision")
 }
 
