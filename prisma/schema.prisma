@@ -1,20 +1,15 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
+﻿generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  //url      = env("DATABASE_URL")
+  // url      = env("DATABASE_URL")
 }
 
-
-enum ApprovalDecisionType {
-  APPROVED
-  REJECTED
-}
+// =========================================================
+// Enums
+// =========================================================
 
 enum OrderApprovalStatus {
   NOT_REQUIRED
@@ -32,159 +27,153 @@ enum ApprovalStepStatus {
 }
 
 // =========================================================
-// CORE ENTITIES
+// Identity & Access
 // =========================================================
 
-model Address {
-  id           String    @id @default(uuid(7)) @db.Uuid
-  name         String    @db.VarChar(100)
-  street       String    @db.VarChar(150)
-  neighborhood String    @db.VarChar(100)
-  number       String    @db.VarChar(20)
-  postalCode   String    @db.VarChar(20)
-  complement   String?   @db.VarChar(100)
-
-  // Relations
-  users             User[]
-  contacts          ContactAddress[]
-  
-  // CRM/ERP IMPROVEMENT: Link Address directly to Orders. 
-  // Systems like SAP and Salesforce distinguish tightly between "Ship-To" and "Bill-To" linked directly to address snapshots.
-  ordersShipping    Order[]   @relation("OrderShippingAddress")
-  ordersPayment     Order[]   @relation("OrderPaymentAddress")
-  
-  branch            Branch?
-
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  @@map("Address")
-}
-
 model User {
-  id                     String     @id @default(uuid(7)) @db.Uuid
-  name                   String     @db.VarChar(100)
-  surname                String     @db.VarChar(100)
-  username               String     @unique @db.VarChar(100)
-  email                  String     @unique @db.VarChar(150)
-  alternativeEmail       String?    @db.VarChar(150)
-  bornDate               DateTime   @db.Date
-  govId                  String     @unique @db.Char(14)
-  password               String     @db.Text
-  phoneNumber            String?    @db.VarChar(30)
-  
-  // Account Recovery
-  passwordResetToken     String?    @unique
-  passwordResetExpires   DateTime?
+  id                   String    @id @default(uuid(7)) @db.Uuid
+  name                 String    @db.VarChar(100)
+  surname              String    @db.VarChar(100)
+  username             String    @unique @db.VarChar(100)
+  email                String    @unique @db.VarChar(150)
+  alternativeEmail     String?   @db.VarChar(150)
+  bornDate             DateTime  @db.Date
+  govId                String    @unique @db.Char(14)
+  password             String    @db.Text
+  phoneNumber          String?   @db.VarChar(30)
+  passwordResetToken   String?   @unique
+  passwordResetExpires DateTime?
 
-  addressId              String     @db.Uuid
-  address                Address    @relation(fields: [addressId], references: [id])
+  addressId String  @db.Uuid
+  address   Address @relation(fields: [addressId], references: [id])
 
-  // Relations
-  ownedAccounts          Account[]  @relation("AccountOwner")
-  profiles               UserProfile[]
-  approvalRequestedOrders Order[]    @relation("OrderApprovalRequester")
+  profiles                UserProfile[]
+  ownedAccounts           Account[]          @relation("AccountOwner")
+  approvalRequestedOrders Order[]            @relation("OrderApprovalRequester")
   approvalDecisions       ApprovalDecision[]
 
-  createdAt              DateTime   @default(now())
-  updatedAt              DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("User")
 }
 
 model Profile {
-  id          String   @id @default(uuid(7)) @db.Uuid
-  name        String   @unique @db.VarChar(100)
-  description String?  @db.Text
+  id          String  @id @default(uuid(7)) @db.Uuid
+  name        String  @unique @db.VarChar(100)
+  description String? @db.Text
 
-  users       UserProfile[]
+  users                UserProfile[]
   approvalStepProfiles ApprovalStepProfile[]
   approvalDecisions    ApprovalDecision[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("Profile")
 }
 
 model UserProfile {
-  userId     String    @db.Uuid
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  profileId  String    @db.Uuid
-  profile    Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId    String @db.Uuid
+  profileId String @db.Uuid
+
   isActive   Boolean   @default(true)
   assignedAt DateTime  @default(now())
   revokedAt  DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@id([userId, profileId])
   @@index([profileId])
   @@map("UserProfile")
 }
 
+// =========================================================
+// Parties & Addresses
+// =========================================================
+
+model Address {
+  id           String  @id @default(uuid(7)) @db.Uuid
+  name         String  @db.VarChar(100)
+  street       String  @db.VarChar(150)
+  neighborhood String  @db.VarChar(100)
+  number       String  @db.VarChar(20)
+  postalCode   String  @db.VarChar(20)
+  complement   String? @db.VarChar(100)
+
+  users          User[]
+  contacts       ContactAddress[]
+  branch         Branch?
+  ordersShipping Order[]          @relation("OrderShippingAddress")
+  ordersPayment  Order[]          @relation("OrderPaymentAddress")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("Address")
+}
 
 model Account {
-  id            String    @id @default(uuid(7)) @db.Uuid
-  govId         String    @unique @db.VarChar(18)
-  officialName  String    @db.VarChar(150)
-  fantasyName   String?   @db.VarChar(150)
-  phoneNumber   String?   @db.VarChar(30)
-  email         String?   @db.VarChar(150)
+  id           String  @id @default(uuid(7)) @db.Uuid
+  govId        String  @unique @db.VarChar(18)
+  officialName String  @db.VarChar(150)
+  fantasyName  String? @db.VarChar(150)
+  phoneNumber  String? @db.VarChar(30)
+  email        String? @db.VarChar(150)
 
-  // Hierarchy
-  mainAccountId String?   @db.Uuid
-  mainAccount   Account?  @relation("AccountHierarchy", fields: [mainAccountId], references: [id])
-  subAccounts   Account[] @relation("AccountHierarchy")
+  mainAccountId String? @db.Uuid
+  ownerUserId   String  @db.Uuid
 
-  ownerUserId   String    @db.Uuid
-  owner         User      @relation("AccountOwner", fields: [ownerUserId], references: [id])
+  mainAccount Account?  @relation("AccountHierarchy", fields: [mainAccountId], references: [id])
+  subAccounts Account[] @relation("AccountHierarchy")
+  owner       User      @relation("AccountOwner", fields: [ownerUserId], references: [id])
+  contacts    Contact[]
+  quotes      Quote[]
 
-  // Relations
-  contacts      Contact[]
-  quotes        Quote[]
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("Account")
 }
 
 model Contact {
-  id           String    @id @default(uuid(7)) @db.Uuid
-  officialName String    @db.VarChar(150)
-  nickname     String?   @db.VarChar(100)
-  
-  accountId    String    @db.Uuid
-  account      Account   @relation(fields: [accountId], references: [id])
+  id           String  @id @default(uuid(7)) @db.Uuid
+  officialName String  @db.VarChar(150)
+  nickname     String? @db.VarChar(100)
 
-  // Relations
-  addresses    ContactAddress[]
+  accountId String  @db.Uuid
+  account   Account @relation(fields: [accountId], references: [id])
 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  addresses ContactAddress[]
+  storages  Storage[]        @relation("LogisticsContact")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("Contact")
 }
 
 model ContactAddress {
-  contactId String  @db.Uuid
-  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  addressId String  @db.Uuid
-  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  contactId String @db.Uuid
+  addressId String @db.Uuid
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  address Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
 
   @@id([contactId, addressId])
   @@map("ContactAddress")
 }
 
 // =========================================================
-// SALES & BILLING (ORDERS, QUOTES, ETC.)
+// Sales
 // =========================================================
 
 model Status {
-  id        String   @id @default(uuid(7)) @db.Uuid
-  name      String   @unique @db.VarChar(50)
-  
-  // Relations
-  orders    Order[]
+  id   String @id @default(uuid(7)) @db.Uuid
+  name String @unique @db.VarChar(50)
+
+  orders Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -193,134 +182,144 @@ model Status {
 }
 
 model Quote {
-  id          String   @id @default(uuid(7)) @db.Uuid
-  name        String   @db.VarChar(150)
-  destination String?  @db.VarChar(150)
-  finalValue  Decimal  @db.Decimal(12, 2)
-  
-  accountId   String   @db.Uuid
-  account     Account  @relation(fields: [accountId], references: [id])
+  id          String  @id @default(uuid(7)) @db.Uuid
+  name        String  @db.VarChar(150)
+  destination String? @db.VarChar(150)
+  finalValue  Decimal @db.Decimal(12, 2)
 
-  // Relations
-  orders      Order[]
-  products    QuoteProduct[]
+  accountId String  @db.Uuid
+  account   Account @relation(fields: [accountId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  orders   Order[]
+  products QuoteProduct[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("Quote")
 }
 
 model QuoteProduct {
-  quoteId     String  @db.Uuid
-  quote       Quote   @relation(fields: [quoteId], references: [id])
-  productId   String  @db.Uuid
-  product     Product @relation(fields: [productId], references: [id])
-  quantity    Decimal @db.Decimal(10, 2)
-  price       Decimal @db.Decimal(12, 2)
-  discount    Decimal @db.Decimal(12, 2)
-  finalPrice  Decimal @db.Decimal(12, 2)
+  quoteId   String @db.Uuid
+  productId String @db.Uuid
+
+  quantity   Decimal @db.Decimal(10, 2)
+  price      Decimal @db.Decimal(12, 2)
+  discount   Decimal @db.Decimal(12, 2)
+  finalPrice Decimal @db.Decimal(12, 2)
+
+  quote   Quote   @relation(fields: [quoteId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 
   @@id([quoteId, productId])
   @@map("QuoteProduct")
 }
 
 model Order {
-  id                String   @id @default(uuid(7)) @db.Uuid
-  name              String   @db.VarChar(150)
-  origin            String?  @db.VarChar(150)
-  destination       String?  @db.VarChar(150)
-  finalValue        Decimal  @db.Decimal(12, 2)
+  id          String  @id @default(uuid(7)) @db.Uuid
+  name        String  @db.VarChar(150)
+  origin      String? @db.VarChar(150)
+  destination String? @db.VarChar(150)
+  finalValue  Decimal @db.Decimal(12, 2)
 
-  quoteId           String?  @db.Uuid
-  quote             Quote?   @relation(fields: [quoteId], references: [id])
-
-  statusId          String   @db.Uuid
-  status            Status   @relation(fields: [statusId], references: [id])
-
-  priceCatalogId    String   @db.Uuid
-  priceCatalog      PriceCatalog @relation(fields: [priceCatalogId], references: [id])
-
-  // Missing in SQL, inferred from description
+  quoteId            String? @db.Uuid
+  statusId           String  @db.Uuid
+  priceCatalogId     String  @db.Uuid
   paymentConditionId String? @db.Uuid
-  paymentCondition   PaymentCondition? @relation(fields: [paymentConditionId], references: [id])
+  shippingAddressId  String? @db.Uuid
+  paymentAddressId   String? @db.Uuid
 
-  // CRM/ERP IMPROVEMENT: Strongly link Ship & Bill addresses to the Address table. 
-  // Future tip: In rigorous ERPs (like SAP), addresses in Orders are cloned/snapshotted 
-  // (or linked to an immutable historical address) so past invoices don't change if the client moves.
-  shippingAddressId  String?  @db.Uuid
-  shippingAddress    Address? @relation("OrderShippingAddress", fields: [shippingAddressId], references: [id])
-  
-  paymentAddressId   String?  @db.Uuid
-  paymentAddress     Address? @relation("OrderPaymentAddress", fields: [paymentAddressId], references: [id])
+  quote            Quote?            @relation(fields: [quoteId], references: [id])
+  status           Status            @relation(fields: [statusId], references: [id])
+  priceCatalog     PriceCatalog      @relation(fields: [priceCatalogId], references: [id])
+  paymentCondition PaymentCondition? @relation(fields: [paymentConditionId], references: [id])
+  shippingAddress  Address?          @relation("OrderShippingAddress", fields: [shippingAddressId], references: [id])
+  paymentAddress   Address?          @relation("OrderPaymentAddress", fields: [paymentAddressId], references: [id])
 
-  // Approval context: policy defines the profile-based flow; the fields below
-  // keep the current order approval state and business observation visible on the order.
   approvalPolicyId          String?             @db.Uuid
-  approvalPolicy            ApprovalPolicy?     @relation(fields: [approvalPolicyId], references: [id])
   approvalRequestedByUserId String?             @db.Uuid
-  approvalRequestedBy       User?               @relation("OrderApprovalRequester", fields: [approvalRequestedByUserId], references: [id])
   approvalStatus            OrderApprovalStatus @default(NOT_REQUIRED)
   approvalSubmittedAt       DateTime?
   approvalResolvedAt        DateTime?
   approvalObservation       String?             @db.Text
-  approvals                 OrderApproval[]
 
-  // CRM/ERP IMPROVEMENT: Stock movements should trace back to the order that triggered them.
-  // storageMovements   StorageMovement[]
+  approvalPolicy      ApprovalPolicy? @relation(fields: [approvalPolicyId], references: [id])
+  approvalRequestedBy User?           @relation("OrderApprovalRequester", fields: [approvalRequestedByUserId], references: [id])
+  approvals           OrderApproval[]
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([approvalStatus])
   @@index([approvalPolicyId])
   @@map("Order")
 }
 
+model PaymentCondition {
+  id           String  @id @default(uuid(7)) @db.Uuid
+  paymentType  String  @db.VarChar(50)
+  installments Int
+  currency     String  @db.Char(3)
+  finalAmount  Decimal @db.Decimal(12, 2)
+  interest     Decimal @db.Decimal(12, 2)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("PaymentCondition")
+}
+
+// =========================================================
+// Order Approval
+// =========================================================
+
 model ApprovalPolicy {
-  id            String    @id @default(uuid(7)) @db.Uuid
-  name          String    @unique @db.VarChar(100)
-  description   String?   @db.Text
-  isActive      Boolean   @default(true)
-  minOrderValue Decimal?  @db.Decimal(12, 2)
-  maxOrderValue Decimal?  @db.Decimal(12, 2)
-  currency      String?   @db.Char(3)
+  id            String   @id @default(uuid(7)) @db.Uuid
+  name          String   @unique @db.VarChar(100)
+  description   String?  @db.Text
+  isActive      Boolean  @default(true)
+  minOrderValue Decimal? @db.Decimal(12, 2)
+  maxOrderValue Decimal? @db.Decimal(12, 2)
+  currency      String?  @db.Char(3)
 
-  orders        Order[]
-  steps         ApprovalStep[]
+  orders Order[]
+  steps  ApprovalStep[]
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([isActive, currency])
   @@map("ApprovalPolicy")
 }
 
 model ApprovalStep {
-  id                String    @id @default(uuid(7)) @db.Uuid
-  policyId          String    @db.Uuid
-  policy            ApprovalPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  id                String  @id @default(uuid(7)) @db.Uuid
+  policyId          String  @db.Uuid
   sequence          Int
-  name              String    @db.VarChar(100)
-  description       String?   @db.Text
-  requiredApprovals Int       @default(1)
-  isFinalStep       Boolean   @default(false)
+  name              String  @db.VarChar(100)
+  description       String? @db.Text
+  requiredApprovals Int     @default(1)
+  isFinalStep       Boolean @default(false)
 
-  profiles          ApprovalStepProfile[]
-  orderApprovals    OrderApproval[]
+  policy         ApprovalPolicy       @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  profiles       ApprovalStepProfile[]
+  orderApprovals OrderApproval[]
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([policyId, sequence])
   @@map("ApprovalStep")
 }
 
 model ApprovalStepProfile {
-  approvalStepId String       @db.Uuid
-  approvalStep   ApprovalStep @relation(fields: [approvalStepId], references: [id], onDelete: Cascade)
-  profileId      String       @db.Uuid
-  profile        Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  approvalStepId String @db.Uuid
+  profileId      String @db.Uuid
+
+  approvalStep ApprovalStep @relation(fields: [approvalStepId], references: [id], onDelete: Cascade)
+  profile      Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@id([approvalStepId, profileId])
   @@index([profileId])
@@ -328,20 +327,20 @@ model ApprovalStepProfile {
 }
 
 model OrderApproval {
-  id             String              @id @default(uuid(7)) @db.Uuid
-  orderId        String              @db.Uuid
-  order          Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  approvalStepId String              @db.Uuid
-  approvalStep   ApprovalStep        @relation(fields: [approvalStepId], references: [id])
-  status         ApprovalStepStatus  @default(PENDING)
-  requestedAt    DateTime            @default(now())
+  id             String             @id @default(uuid(7)) @db.Uuid
+  orderId        String             @db.Uuid
+  approvalStepId String             @db.Uuid
+  status         ApprovalStepStatus @default(PENDING)
+  requestedAt    DateTime           @default(now())
   resolvedAt     DateTime?
-  observation    String?             @db.Text
+  observation    String?            @db.Text
 
-  decisions      ApprovalDecision[]
+  order        Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  approvalStep ApprovalStep       @relation(fields: [approvalStepId], references: [id])
+  decisions    ApprovalDecision[]
 
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([orderId, approvalStepId])
   @@index([status])
@@ -349,54 +348,61 @@ model OrderApproval {
 }
 
 model ApprovalDecision {
-  id              String               @id @default(uuid(7)) @db.Uuid
-  orderApprovalId String               @db.Uuid
-  orderApproval   OrderApproval        @relation(fields: [orderApprovalId], references: [id], onDelete: Cascade)
-  userId          String               @db.Uuid
-  user            User                 @relation(fields: [userId], references: [id])
-  // The selected profile must be one of the user's active UserProfile records
-  // and one of the profiles allowed for the approval step.
-  profileId       String               @db.Uuid
-  profile         Profile              @relation(fields: [profileId], references: [id])
-  isApproved      Boolean?             @default(false)
-  observation     String?              @db.Text
-  decidedAt       DateTime             @default(now())
+  id              String   @id @default(uuid(7)) @db.Uuid
+  orderApprovalId String   @db.Uuid
+  userId          String   @db.Uuid
+  profileId       String   @db.Uuid
+  isApproved      Boolean
+  observation     String?  @db.Text
+  decidedAt       DateTime @default(now())
 
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  orderApproval OrderApproval @relation(fields: [orderApprovalId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id])
+  profile       Profile       @relation(fields: [profileId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([orderApprovalId, userId])
   @@index([profileId])
+  @@index([isApproved])
   @@map("ApprovalDecision")
 }
 
-model PaymentCondition {
-  id            String   @id @default(uuid(7)) @db.Uuid
-  paymentType   String   @db.VarChar(50)
-  installments  Int
-  currency      String   @db.Char(3)
-  finalAmount   Decimal  @db.Decimal(12, 2)
-  interest      Decimal  @db.Decimal(12, 2) // Could be percentage or flat
+// =========================================================
+// Product & Catalog
+// =========================================================
 
-  orders        Order[]
+model Product {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  name            String   @db.VarChar(150)
+  nickname        String?  @db.VarChar(100)
+  provider        String?  @db.VarChar(150)
+  basePrice       Decimal? @db.Decimal(12, 2)
+  defaultCurrency String?  @db.Char(3)
+  ncm             String?  @db.VarChar(50)
+  productCode     String   @unique @db.VarChar(20)
+  pictureUrl      String?  @db.Text
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  catalogs   PriceCatalogProduct[]
+  structure  Structure?
+  components StructureProduct[]
+  storages   StorageProduct[]
+  quotes     QuoteProduct[]
 
-  @@map("PaymentCondition")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("Product")
 }
 
-// =========================================================
-// PRODUCT & CATALOG
-// =========================================================
-
 model PriceCatalog {
-  id        String   @id @default(uuid(7)) @db.Uuid
-  name      String   @db.VarChar(100)
-  currency  String   @db.Char(3)
+  id       String @id @default(uuid(7)) @db.Uuid
+  name     String @db.VarChar(100)
+  currency String @db.Char(3)
 
-  products  PriceCatalogProduct[]
-  orders    Order[]
+  products PriceCatalogProduct[]
+  orders   Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -404,164 +410,101 @@ model PriceCatalog {
   @@map("PriceCatalog")
 }
 
-model Product {
-  id           String   @id @default(uuid(7)) @db.Uuid
-  name         String   @db.VarChar(150)
-  nickname     String?  @db.VarChar(100)
-  provider     String?  @db.VarChar(150)
-  basePrice    Decimal? @db.Decimal(12, 2)
-  defaultCurrency String?  @db.Char(3)
-  ncm          String?  @db.VarChar(50)
-  productCode  String   @unique @db.VarChar(20)
-  pictureUrl   String?  @db.Text // Suggestion for simple file reference
-
-  // Relations
-  catalogs     PriceCatalogProduct[]
-  structure    Structure?
-  components   StructureProduct[]
-  storages     StorageProduct[]
-  // movements    StorageMovement[]
-  quotes       QuoteProduct[]
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@map("Product")
-}
-
 model PriceCatalogProduct {
-  id             String       @id @default(uuid(7)) @db.Uuid
-  priceCatalogId String       @db.Uuid
-  priceCatalog   PriceCatalog @relation(fields: [priceCatalogId], references: [id])
-  productId      String       @db.Uuid
-  product        Product      @relation(fields: [productId], references: [id])
-  basePrice      Decimal      @db.Decimal(12, 2)
+  id             String  @id @default(uuid(7)) @db.Uuid
+  priceCatalogId String  @db.Uuid
+  productId      String  @db.Uuid
+  basePrice      Decimal @db.Decimal(12, 2)
 
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  priceCatalog PriceCatalog @relation(fields: [priceCatalogId], references: [id])
+  product      Product      @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([priceCatalogId, productId])
   @@map("PriceCatalogProduct")
 }
 
-// CRM/ERP IMPROVEMENT: Rename "Structure" context to "Bill of Material" (BOM).
-// While the Prisma models are named Structure/StructureProduct as requested, mapping them 
-// to BILL_OF_MATERIAL in the database aligns with the universal industry standard (BOM).
 model Structure {
-  id         String   @id @default(uuid(7)) @db.Uuid
-  
-  productId  String   @unique @db.Uuid
-  product    Product  @relation(fields: [productId], references: [id])
+  id        String @id @default(uuid(7)) @db.Uuid
+  productId String @unique @db.Uuid
 
+  product    Product            @relation(fields: [productId], references: [id])
   components StructureProduct[]
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@map("BillOfMaterial") // Formerly "STRUCTURE"
+  @@map("BillOfMaterial")
 }
 
 model StructureProduct {
-  structureId        String    @db.Uuid
-  structure          Structure @relation(fields: [structureId], references: [id], onDelete: Cascade)
-  
-  componentProductId String    @db.Uuid
-  componentProduct   Product   @relation(fields: [componentProductId], references: [id])
-  
-  quantity           Decimal   @db.Decimal(10, 2)
+  structureId        String  @db.Uuid
+  componentProductId String  @db.Uuid
+  quantity           Decimal @db.Decimal(10, 2)
+
+  structure        Structure @relation(fields: [structureId], references: [id], onDelete: Cascade)
+  componentProduct Product   @relation(fields: [componentProductId], references: [id])
 
   @@id([structureId, componentProductId])
-  @@map("BomItem") // Formerly "STRUCTURE_PRODUCT"
+  @@map("BomItem")
 }
 
 // =========================================================
-// LOGISTICS & INVENTORY
+// Logistics & Inventory
 // =========================================================
 
 model Branch {
-  id           String    @id @default(uuid(7)) @db.Uuid
-  govId        String    @unique @db.VarChar(18)
-  officialName String    @db.VarChar(150)
-  fantasyName  String?   @db.VarChar(150)
-  phoneNumber  String?   @db.VarChar(30)
-  email        String?   @db.VarChar(150)
+  id           String  @id @default(uuid(7)) @db.Uuid
+  govId        String  @unique @db.VarChar(18)
+  officialName String  @db.VarChar(150)
+  fantasyName  String? @db.VarChar(150)
+  phoneNumber  String? @db.VarChar(30)
+  email        String? @db.VarChar(150)
 
-  addressId    String    @unique @db.Uuid
-  address      Address   @relation(fields: [addressId], references: [id])
+  addressId String  @unique @db.Uuid
+  address   Address @relation(fields: [addressId], references: [id])
 
-  storages     Storage[]
+  storages Storage[]
 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("Branch")
 }
 
 model Storage {
-  id                 String   @id @default(uuid(7)) @db.Uuid
-  name               String   @db.VarChar(100)
-  storageCode        String   @unique @db.VarChar(50) // e.g. STRG0001
-  
-  branchId           String   @db.Uuid
-  branch             Branch   @relation(fields: [branchId], references: [id])
-  
-  logisticsContactId String?  @db.Uuid
-  //logisticsContact   Contact? @relation("LogisticsContact", fields: [logisticsContactId], references: [id])
+  id                 String  @id @default(uuid(7)) @db.Uuid
+  name               String  @db.VarChar(100)
+  storageCode        String  @unique @db.VarChar(50)
+  branchId           String  @db.Uuid
+  logisticsContactId String? @db.Uuid
 
-  products           StorageProduct[]
-  // movementsOut       StorageMovement[] @relation("FromStorage")
-  // movementsIn        StorageMovement[] @relation("ToStorage")
+  branch           Branch           @relation(fields: [branchId], references: [id])
+  logisticsContact Contact?         @relation("LogisticsContact", fields: [logisticsContactId], references: [id])
+  products         StorageProduct[]
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("Storage")
 }
 
 model StorageProduct {
-  id                String   @id @default(uuid(7)) @db.Uuid
-  storageId         String   @db.Uuid
-  storage           Storage  @relation(fields: [storageId], references: [id])
-  
-  productId         String   @db.Uuid
-  product           Product  @relation(fields: [productId], references: [id])
-  
-  availableQuantity Decimal  @db.Decimal(12, 2)
-  committedQuantity Decimal  @db.Decimal(12, 2)
-  totalQuantity     Decimal  @db.Decimal(12, 2)
+  id                String  @id @default(uuid(7)) @db.Uuid
+  storageId         String  @db.Uuid
+  productId         String  @db.Uuid
+  availableQuantity Decimal @db.Decimal(12, 2)
+  committedQuantity Decimal @db.Decimal(12, 2)
+  totalQuantity     Decimal @db.Decimal(12, 2)
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  storage Storage @relation(fields: [storageId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([storageId, productId])
   @@map("StorageProduct")
 }
-
-/*
-model StorageMovement {
-  id            String       @id @default(uuid(7)) @db.Uuid
-  
-  fromStorageId String?      @db.Uuid
-  fromStorage   Storage?     @relation("FromStorage", fields: [fromStorageId], references: [id])
-  
-  toStorageId   String?      @db.Uuid
-  toStorage     Storage?     @relation("ToStorage", fields: [toStorageId], references: [id])
-  
-  productId     String       @db.Uuid
-  product       Product      @relation(fields: [productId], references: [id])
-  
-  // CRM/ERP IMPROVEMENT: Document Traceability. 
-  // A stock movement should never occur in a vacuum; it MUST trace back to a document (like an Order)
-  // to pass accounting audits.
-  orderId       String?      @db.Uuid
-  order         Order?       @relation(fields: [orderId], references: [id])
-
-  quantity      Decimal      @db.Decimal(12, 2)
-  movementType  MovementType // Enum replacing VarChar 
-
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  @@map("StorageMovement")
-}
-*/
