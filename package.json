@@ -1,0 +1,25 @@
+{
+  "name": "yes-api",
+  "version": "0.0.1",
+  "description": "YES CRM API",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GeorgeVieiraNRB/yes-api.git"
+  },
+  "keywords": [
+    "CRM"
+  ],
+  "author": "GeorgeVieiraNRB",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GeorgeVieiraNRB/yes-api/issues"
+  },
+  "homepage": "https://github.com/GeorgeVieiraNRB/yes-api#readme"
+}
