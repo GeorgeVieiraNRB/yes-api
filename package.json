@@ -6,15 +6,27 @@
   "directories": {
     "doc": "docs"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "prisma:validate": "prisma validate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "seed": "tsx prisma/seed.ts"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/GeorgeVieiraNRB/yes-api.git"
   },
   "keywords": [
-    "CRM"
+    "CRM",
+    "API"
   ],
   "author": "GeorgeVieiraNRB",
   "license": "ISC",
@@ -30,7 +42,7 @@
     "@fastify/rate-limit": "^11.0.0",
     "@fastify/swagger": "^9.7.0",
     "@fastify/swagger-ui": "^6.0.0",
-    "@prisma/client": "^7.8.0",
+    "@prisma/client": "6.19.3",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
     "fastify": "^5.8.5",
