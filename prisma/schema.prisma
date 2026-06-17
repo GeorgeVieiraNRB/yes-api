@@ -518,7 +518,7 @@ model Storage {
   branch             Branch   @relation(fields: [branchId], references: [id])
   
   logisticsContactId String?  @db.Uuid
-  logisticsContact   Contact? @relation("LogisticsContact", fields: [logisticsContactId], references: [id])
+  //logisticsContact   Contact? @relation("LogisticsContact", fields: [logisticsContactId], references: [id])
 
   products           StorageProduct[]
   // movementsOut       StorageMovement[] @relation("FromStorage")
