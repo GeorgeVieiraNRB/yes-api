@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1507" height="1044"
+     viewBox="0 0 1507 1044" role="img" aria-label="YES logo">
+  <defs>
+    <linearGradient id="yesGradient" x1="8%" y1="92%" x2="86%" y2="8%">
+      <stop offset="0%" stop-color="#0636D8"/>
+      <stop offset="30%" stop-color="#075AF4"/>
+      <stop offset="53%" stop-color="#16C2F4"/>
+      <stop offset="72%" stop-color="#087BFA"/>
+      <stop offset="100%" stop-color="#0641DE"/>
+    </linearGradient>
+  </defs>
+  <path d="M 836 14 L 1061 14 L 1072 19 L 1076 29 L 1069 50 L 877 325 L 396 1006 L 376 1016 L 338 1017 L 145 1016 L 136 1012 L 128 997 L 135 974 L 341 684 L 341 679 L 325 658 L 112 384 L 110 370 L 114 357 L 151 292 L 169 278 L 187 273 L 356 273 L 367 276 L 388 296 L 499 447 L 507 452 L 809 30 L 822 19 Z M 887 392 L 1128 393 L 1021 548 L 904 549 L 886 555 L 875 567 L 863 588 L 994 589 L 868 773 L 740 774 L 721 788 L 707 812 L 840 814 L 716 997 L 706 1009 L 690 1016 L 420 1016 L 832 427 L 856 403 Z M 1191 392 L 1378 393 L 1403 407 L 1411 421 L 1413 442 L 1405 463 L 1347 549 L 1184 549 L 1168 555 L 1146 584 L 1145 589 L 1321 590 L 1106 912 L 1056 966 L 1016 992 L 980 1007 L 934 1016 L 732 1017 L 869 813 L 1062 812 L 1080 800 L 1096 773 L 896 772 L 1136 424 L 1163 401 Z" fill="url(#yesGradient)" fill-rule="evenodd"/>
+</svg>
