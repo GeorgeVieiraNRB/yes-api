@@ -1,11 +1,8 @@
-import "dotenv/config";
 import { PrismaClient } from "../generated/prisma/client";
 import bcrypt from "bcrypt";
+import { env } from "../src/env";
 
 const prisma = new PrismaClient();
-
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "Admin@123456";
-const PASSWORD_SALT_ROUNDS = Number(process.env.PASSWORD_SALT_ROUNDS ?? 12);
 
 const profiles = [
   {
@@ -190,7 +187,10 @@ async function upsertOrder(data: {
 }
 
 async function main() {
-  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, PASSWORD_SALT_ROUNDS);
+  const passwordHash = await bcrypt.hash(
+    env.ADMIN_PASSWORD,
+    env.PASSWORD_SALT_ROUNDS,
+  );
 
   const profileByName = new Map<string, { id: string; name: string }>();
 
@@ -641,11 +641,7 @@ async function main() {
 
   console.info("Seed completed successfully.");
   console.info("Admin user: admin@yescrm.local / username: admin");
-  console.info(
-    process.env.ADMIN_PASSWORD
-      ? "Admin password loaded from ADMIN_PASSWORD."
-      : "Admin password fallback used: Admin@123456",
-  );
+  console.info("Admin password loaded from ADMIN_PASSWORD.");
 }
 
 main()
