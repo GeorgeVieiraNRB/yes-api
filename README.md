@@ -1,201 +1,45 @@
 # YES API
 
-![YES-LOGO](/assets/yes-logo-transparent.png)
+![YES logo](assets/yes-logo-transparent.png)
 
-Backend project for the YES CRM platform. The repository currently contains the database/domain foundation for a CRM API, built around Prisma, PostgreSQL, and TypeScript. The HTTP API stack is planned with Fastify and related plugins, but the current committed source is focused on Prisma schema, migrations, seed data, documentation, and project configuration.
+Backend for YES CRM. The project covers customer management, catalogs, quotes,
+orders, inventory, and profile-based order approval.
 
-## Stack
+## Current status
 
-- Node.js with TypeScript
-- Prisma ORM
-- PostgreSQL
-- Fastify dependencies for the future HTTP API
-- Zod for validation
-- Bcrypt for password hashing
-- Biome configuration for formatting and linting
+The database foundation is the most complete part of the project. The repository
+currently has:
 
-## Current Project Status
+- a Prisma schema, initial migration, and idempotent development seed;
+- centralized environment validation with Zod;
+- a minimal Express server;
+- an initial MVC folder structure with separate application bootstrap;
+- password and access-token helpers;
+- initial request-validation middleware.
 
-Implemented:
+Routes, use cases, authorization, refresh sessions, tests, and production
+hardening are not implemented yet. See [docs/todo.md](docs/todo.md) for the
+delivery order.
 
-- Prisma schema for the CRM domain
-- Initial migration under `prisma/migrations`
-- Prisma seed with an admin user and sample base data
-- Database/domain documentation in `docs/description.md`
-- Backend task backlog in `docs/todo.md`
+## Stack decision
 
-Planned but not yet implemented in `src/`:
+The application should continue with the stack already used by its source code:
 
-- Fastify server entrypoint
-- API routes/controllers
-- Authentication and authorization flow
-- Request validation schemas
-- Services, repositories, middlewares, and tests
+- Node.js and TypeScript;
+- Express 5 as the HTTP framework;
+- PostgreSQL and Prisma ORM;
+- Zod for environment and request validation;
+- bcrypt for password hashing;
+- JSON Web Tokens for short-lived access tokens;
+- Biome for formatting and linting.
 
-## Domain Overview
+Express is the only HTTP framework and Zod is the only schema-validation library.
+Keeping one framework and one validation/error model avoids duplicated plugins,
+types, and middleware conventions.
 
-The schema models a CRM workflow with:
+## Setup
 
-- Users, profiles, and user-profile assignments
-- Accounts, contacts, and addresses
-- Products, price catalogs, bill of materials, and inventory
-- Quotes and orders
-- Payment conditions
-- Branches and storage locations
-- Order approval policies, approval steps, allowed approver profiles, order approvals, and approval decisions
-
-More detail is available in `docs/description.md`.
-
-## Requirements
-
-- Node.js
-- npm
-- PostgreSQL database
-
-The project uses Prisma Client generated into:
-
-```text
-generated/prisma
-```
-
-That folder is ignored by Git and should be regenerated locally.
-
-## Environment Variables
-
-Create a `.env` file based on `.env.example`:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Required variables:
-
-```env
-DATABASE_URL="postgresql://..."
-ADMIN_PASSWORD="ChangeMe!123"
-PASSWORD_SALT_ROUNDS=12
-```
-
-`ADMIN_PASSWORD` is used by the seed for the initial admin user. If it is not set, the seed falls back to `Admin@123456`, which is only suitable for local development.
-
-## Install
-
-```powershell
-npm install
-```
-
-If PowerShell blocks `npx` because of execution policy, use `npx.cmd` instead of `npx`.
-
-## Prisma Commands
-
-Validate the schema:
-
-```powershell
-npm run prisma:validate
-```
-
-Generate Prisma Client:
-
-```powershell
-npm run prisma:generate
-```
-
-Create and apply a development migration:
-
-```powershell
-npm run prisma:migrate
-```
-
-Or name a migration explicitly:
-
-```powershell
-npx.cmd prisma migrate dev --name migration_name
-```
-
-Apply existing migrations to a deployed/staging database:
-
-```powershell
-npx.cmd prisma migrate deploy
-```
-
-Open Prisma Studio:
-
-```powershell
-npm run prisma:studio
-```
-
-## Seed
-
-Run the seed:
-
-```powershell
-npm run seed
-```
-
-Or through Prisma:
-
-```powershell
-npx.cmd prisma db seed
-```
-
-The seed is designed to be idempotent and creates:
-
-- Admin user: `admin@yescrm.local`
-- Username: `admin`
-- Profiles: `ADMIN`, `SALES`, `FINANCE`, `MANAGER`, `LOGISTICS`
-- Base order statuses
-- Example branch, storage, account, contact, address, catalog, payment condition, products, quote, order, and approval workflow
-
-## Migrations
-
-Commit Prisma migrations to Git.
-
-Files that should be committed:
-
-```text
-prisma/schema.prisma
-prisma/migrations/
-```
-
-Generated Prisma Client output should not be committed. The repository already ignores:
-
-```text
-/generated/prisma
-```
-
-## Scripts
-
-```json
-{
-  "dev": "tsx watch src/server.ts",
-  "start": "node dist/server.js",
-  "build": "tsc",
-  "prisma:validate": "prisma validate",
-  "prisma:generate": "prisma generate",
-  "prisma:migrate": "prisma migrate dev",
-  "prisma:studio": "prisma studio",
-  "seed": "tsx prisma/seed.ts"
-}
-```
-
-Note: `dev`, `start`, and `build` expect future application source files. At the moment, there is no committed `src/` directory.
-
-## Project Structure
-
-```text
-assets/                 Brand and logo assets
-docs/                   Domain documentation and backend TODO list
-generated/prisma/        Local Prisma Client output, ignored by Git
-prisma/
-  migrations/            Database migration history
-  schema.prisma          Prisma schema
-  seed.ts                Initial admin and sample base records
-biome.json               Formatter and linter configuration
-package.json             npm scripts and dependencies
-prisma.config.ts         Prisma CLI configuration
-```
-
-## Typical Local Setup
+Requirements: Node.js, npm, and PostgreSQL.
 
 ```powershell
 npm install
@@ -203,20 +47,75 @@ Copy-Item .env.example .env
 npm run prisma:generate
 npm run prisma:migrate
 npm run seed
+npm run dev
 ```
 
-After that, the database should contain the schema and base records needed for local development.
+On PowerShell installations that block `npx`, use `npx.cmd`.
+
+Environment variables are documented in [.env.example](.env.example) and
+validated on startup by `src/config/environment.ts`. Do not commit `.env`.
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the API with file watching |
+| `npm run build` | Compile TypeScript and copy the generated Prisma engine |
+| `npm run build:production` | Generate Prisma Client and build a deployable `dist` |
+| `npm run prisma:validate` | Validate the Prisma schema |
+| `npm run prisma:generate` | Generate Prisma Client |
+| `npm run prisma:migrate` | Create/apply a development migration |
+| `npm run prisma:studio` | Open Prisma Studio |
+| `npm run seed` | Insert the initial admin and sample CRM data |
+
+The seed reads `ADMIN_EMAIL` and `ADMIN_PASSWORD` from the environment and also
+creates the base profiles `ADMIN`, `SALES`, `FINANCE`, `MANAGER`, and
+`LOGISTICS`.
 
 ## Documentation
 
-- `docs/description.md`: database and domain model documentation
-- `docs/todo.md`: backend implementation backlog
+- [Domain and business rules](docs/description.md)
+- [Suggested application structure](docs/architecture.md)
+- [Prioritized implementation plan](docs/todo.md)
 
-## Next Steps
+The Prisma schema remains the source of truth for the database shape. The
+business-rules document is the source of truth for behavior that cannot be
+expressed by database constraints alone.
 
-- Add the `src/` application structure
-- Implement the Fastify server
-- Add authentication and session handling
-- Add profile-based authorization
-- Add routes for users, accounts, products, quotes, orders, approvals, branches, and inventory
-- Add tests for authentication, authorization, seeds, and approval workflows
+## Source layout
+
+```text
+src/
+  app.ts            Express configuration
+  server.ts         HTTP process startup
+  config/           Validated application configuration
+  controllers/      MVC request handlers
+  database/         Prisma Client lifecycle
+  middlewares/      Express request pipeline
+  routes/           URL-to-controller mapping
+  security/         Password and token primitives
+  types/            Shared TypeScript contracts
+```
+
+Prisma models currently provide the MVC Model foundation. Domain-specific
+`models`, `services`, and `validators` should be added only as routes and business
+use cases are implemented; empty placeholder directories are intentionally
+avoided.
+
+## Production artifact
+
+Run:
+
+```powershell
+npm ci
+npm run build:production
+```
+
+The deployable application consists of `dist/`, `package.json`, and
+`package-lock.json`. Install runtime dependencies with `npm ci --omit=dev` in the
+deployment image, then run `npm start`.
+
+The build copies Prisma's platform-specific native query engine into
+`dist/generated/prisma`. Build the artifact on the same operating-system family
+and CPU architecture used in production, or configure the corresponding Prisma
+binary target.

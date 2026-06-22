@@ -1,145 +1,107 @@
-# TODO - Backend
+# Backend delivery plan
 
-## Base Do Projeto
+This list is ordered. Finish the current milestone before expanding the next one.
+Deferred infrastructure stays out of the critical path until the core workflow is
+usable.
 
-- [ ] Definir stack backend oficial do projeto, incluindo framework HTTP, ORM Prisma, validação de entrada, autenticação e ferramenta de testes.
-- [ ] Configurar estrutura de pastas para módulos de domínio, rotas/controllers, services/use-cases, repositories, middlewares, schemas de validação e testes.
-- [ ] Configurar variáveis de ambiente obrigatórias, como `DATABASE_URL`, segredo JWT, origem CORS, configurações de e-mail, Redis/cache e ambiente de execução.
-- [ ] Criar configuração de logs estruturados para requisições, erros, autenticação e eventos críticos de negócio.
-- [ ] Padronizar respostas de erro da API com código, mensagem, detalhes opcionais e identificador de rastreio.
+## 0. Foundation — current priority
 
-## Banco De Dados E Prisma
+- [x] Create the initial Prisma schema and migration.
+- [x] Create an idempotent seed for profiles and sample CRM data.
+- [x] Centralize and validate environment variables.
+- [x] Add basic bcrypt and JWT helpers.
+- [x] Add a minimal Express server.
+- [x] Establish the initial MVC directories and split routing/controller concerns.
+- [x] Separate Express application creation from HTTP server startup.
+- [x] Move the shared Prisma Client into `database/prisma-client.ts` and align it
+      with the configured generated client.
+- [x] Add `tsconfig.json`.
+- [x] Make `npm run build` succeed.
+- [x] Define a production artifact and copy the generated Prisma query engine into
+      `dist` during the build.
+- [x] Commit to Express and remove unused Fastify dependencies.
+- [x] Commit to Zod request schemas and remove `express-validator`.
+- [x] Remove the deprecated `package.json#prisma` configuration after confirming
+      the equivalent settings in `prisma.config.ts`.
+- [ ] Add graceful HTTP shutdown and disconnect Prisma on process termination.
+- [ ] Add configured CORS, Helmet, request IDs, structured logging, and a global
+      error handler.
+- [ ] Add `GET /health` and database-aware `GET /ready`.
+- [ ] Add format, lint, type-check, and test scripts suitable for CI.
 
-- [ ] Mover ou sincronizar o schema documentado em `docs/prisma/schema.prisma` com o schema Prisma usado pela aplicação.
-- [ ] Validar o schema Prisma com `prisma validate`.
-- [ ] Criar migrations iniciais para todas as entidades do contexto atual.
-- [ ] Revisar índices mínimos para login, busca de pedidos, aprovação, perfis, status e catálogo de preços.
-- [ ] Definir estratégia para UUID v7 no banco e confirmar compatibilidade com Prisma/PostgreSQL.
-- [ ] Criar camada de acesso ao banco com Prisma Client e tratamento centralizado de erros conhecidos.
-- [ ] Definir política de soft delete ou exclusão definitiva para entidades sensíveis.
+## 1. Authentication and users
 
-## Seeds
+- [ ] Add `User.isActive` and a hashed/rotating `RefreshSession` model with a
+      migration.
+- [ ] Implement login by normalized email or username.
+- [ ] Implement access-token authentication and active-profile authorization.
+- [ ] Implement refresh rotation, logout, session revocation, and reuse detection.
+- [ ] Implement `GET /auth/me` without exposing sensitive user fields.
+- [ ] Implement forgot/reset password with generic responses, hashed tokens,
+      expiry, single use, and session revocation.
+- [ ] Add rate limits to login, refresh, and password-reset endpoints.
+- [ ] Implement user CRUD, activation, and auditable profile assignment/revocation.
+- [ ] Test invalid credentials, expired tokens, revoked sessions, disabled users,
+      and revoked profiles.
 
-- [ ] Criar seed inicial de `Status` de pedidos.
-- [ ] Criar seed inicial de `Profile`, incluindo perfis administrativos, comerciais, financeiros, gerenciais e logísticos.
-- [ ] Criar usuário administrador inicial com senha segura via variável de ambiente.
-- [ ] Criar seed de `ApprovalPolicy`, `ApprovalStep` e `ApprovalStepProfile` para o fluxo de aprovação de pedidos.
-- [ ] Criar seed de dados mínimos para catálogo de preços, condições de pagamento e filial, se necessários para testar pedidos.
-- [ ] Garantir que seeds sejam idempotentes, podendo rodar mais de uma vez sem duplicar dados.
+## 2. Customer and catalog baseline
 
-## Autenticação E Sessão
+- [ ] Implement accounts, contacts, and addresses with normalization and
+      pagination.
+- [ ] Prevent cyclic account hierarchies.
+- [ ] Implement products, catalogs, and catalog items.
+- [ ] Define archival/soft-delete behavior for referenced master data.
+- [ ] Validate monetary values, quantities, government IDs, currency codes, and
+      product codes.
+- [ ] Add authorization rules for `ADMIN`, `SALES`, `FINANCE`, `MANAGER`, and
+      `LOGISTICS`.
 
-- [ ] Implementar login por `username` ou `email` com senha hash.
-- [ ] Usar algoritmo seguro para hash de senha, como Argon2id ou bcrypt com custo adequado.
-- [ ] Implementar emissão de access token e refresh token.
-- [ ] Persistir refresh tokens de forma segura, com rotação e revogação.
-- [ ] Criar rota de logout para revogar refresh token.
-- [ ] Criar middleware de autenticação para proteger rotas privadas.
-- [ ] Criar middleware de autorização por perfil usando `UserProfile.isActive`.
-- [ ] Definir tempo de expiração dos tokens por ambiente.
-- [ ] Bloquear login de usuário inativo, caso o campo de status do usuário seja adicionado.
+## 3. Quotes and orders
 
-## Redefinição De Senha
+- [ ] Implement quote lines and server-side total calculation.
+- [ ] Implement order creation directly and from an immutable quote snapshot.
+- [ ] Decide tax, freight, rounding, and editing/cancellation rules.
+- [ ] Separate operational order status transitions from approval status.
+- [ ] Review the address model so historical orders retain address snapshots.
+- [ ] Add transaction and integration tests for monetary calculations.
 
-- [ ] Criar endpoint para solicitar redefinição de senha por e-mail.
-- [ ] Gerar token de redefinição com entropia suficiente e armazenar somente hash do token.
-- [ ] Definir expiração curta para `passwordResetExpires`.
-- [ ] Enviar e-mail com link de redefinição usando provedor configurável.
-- [ ] Criar endpoint para validar token de redefinição.
-- [ ] Criar endpoint para trocar senha usando token válido.
-- [ ] Invalidar token após uso.
-- [ ] Revogar sessões e refresh tokens ativos após troca de senha.
-- [ ] Aplicar rate limit na solicitação de redefinição para evitar enumeração e abuso.
-- [ ] Responder sempre de forma genérica na solicitação de redefinição, sem confirmar se o e-mail existe.
+## 4. Approval workflow
 
-## Rotas Principais
+- [ ] Select exactly one active policy by currency and inclusive value range;
+      reject overlapping configurations.
+- [ ] Submit an order and create its approval steps atomically.
+- [ ] Allow decisions only on the current step and from an allowed active profile.
+- [ ] Prohibit requester self-approval and duplicate decisions.
+- [ ] Approve after the required distinct approvals; reject on the first rejection.
+- [ ] Resolve the order and cancel later steps atomically.
+- [ ] Expose pending work, decision, cancellation, and history endpoints.
+- [ ] Test simultaneous decisions, rollback, profile revocation, and complete
+      approval/rejection paths.
 
-- [ ] Criar rotas de saúde, como `GET /health` e `GET /ready`.
-- [ ] Criar rotas de autenticação: login, refresh, logout, solicitar redefinição e redefinir senha.
-- [ ] Criar rotas de usuários: criar, listar, buscar, atualizar, ativar/desativar e gerenciar perfis.
-- [ ] Criar rotas de perfis: listar, criar, atualizar e vincular permissões futuras.
-- [ ] Criar rotas de contas, contatos e endereços.
-- [ ] Criar rotas de produtos, catálogos de preço e itens de catálogo.
-- [ ] Criar rotas de orçamentos e itens de orçamento.
-- [ ] Criar rotas de pedidos, incluindo criação a partir de orçamento.
-- [ ] Criar rotas de aprovação de pedidos: submeter, listar pendentes, aprovar, rejeitar, cancelar e consultar histórico.
-- [ ] Criar rotas de filiais, estoques e produtos em estoque.
-- [ ] Definir paginação, filtros, ordenação e busca textual nas listagens.
+## 5. Inventory and operations
 
-## Fluxo De Aprovação De Pedidos
+- [ ] Implement branches, storages, and inventory queries.
+- [ ] Decide when an order reserves stock.
+- [ ] Enforce non-negative balances and
+      `total = available + committed` transactionally.
+- [ ] Add immutable inventory-movement records before enabling stock mutations.
+- [ ] Implement bill-of-material validation and prevent direct self-reference.
+- [ ] Add OpenAPI documentation and operational metrics.
+- [ ] Define backup, retention, cleanup, and audit-log policies.
 
-- [ ] Selecionar `ApprovalPolicy` ativa por valor final, moeda e regras de negócio do pedido.
-- [ ] Ao submeter pedido, preencher `approvalPolicyId`, `approvalRequestedByUserId`, `approvalStatus`, `approvalSubmittedAt` e `approvalObservation`.
-- [ ] Criar `OrderApproval` para cada `ApprovalStep` da política selecionada.
-- [ ] Garantir que apenas a etapa corrente possa receber decisões.
-- [ ] Validar que o usuário aprovador possui `UserProfile` ativo permitido em `ApprovalStepProfile`.
-- [ ] Registrar `ApprovalDecision` com usuário, perfil usado, decisão, observação e data.
-- [ ] Aprovar etapa quando atingir `requiredApprovals`.
-- [ ] Rejeitar fluxo quando uma etapa for rejeitada, salvo se a regra de negócio exigir múltiplas rejeições.
-- [ ] Cancelar etapas pendentes quando o fluxo for rejeitado ou cancelado.
-- [ ] Atualizar `Order.approvalStatus` e `approvalResolvedAt` ao finalizar o fluxo.
-- [ ] Impedir decisão duplicada do mesmo usuário na mesma etapa.
-- [ ] Decidir regra para impedir ou permitir autoaprovação do solicitante.
+## Deferred until justified
 
-## Segurança Mínima
+- Redis caching and distributed rate limiting.
+- Email notifications beyond password reset.
+- Background jobs and queues.
+- Service decomposition or microservices.
+- Advanced permission records beyond the current profile model.
 
-- [ ] Configurar CORS com origens permitidas por ambiente.
-- [ ] Adicionar headers de segurança HTTP.
-- [ ] Implementar rate limiting em autenticação, redefinição de senha e rotas sensíveis.
-- [ ] Validar todos os payloads de entrada com schemas tipados.
-- [ ] Sanitizar e normalizar campos como e-mail, CPF/CNPJ, telefone, CEP e códigos de produto.
-- [ ] Garantir que erros internos não vazem stack trace em produção.
-- [ ] Usar HTTPS em produção e cookies seguros se refresh token for transportado por cookie.
-- [ ] Proteger segredos por variáveis de ambiente e nunca versionar credenciais.
-- [ ] Implementar auditoria para login, falhas de login, redefinição de senha, mudanças de perfil e decisões de aprovação.
-- [ ] Criar política de permissões mínimas para cada perfil.
+## Product decisions required
 
-## Cache E Redis
-
-- [ ] Definir banco de cache, preferencialmente Redis.
-- [ ] Configurar conexão Redis por variável de ambiente.
-- [ ] Usar cache para dados pouco voláteis, como perfis, status, catálogos e políticas de aprovação ativas.
-- [ ] Definir TTLs por tipo de dado.
-- [ ] Invalidar cache ao alterar perfis, políticas de aprovação, catálogos e status.
-- [ ] Usar Redis para rate limiting distribuído.
-- [ ] Usar Redis para blacklist/revogação de tokens, se a estratégia de sessão exigir.
-- [ ] Definir comportamento da API quando Redis estiver indisponível.
-
-## E-mail E Notificações
-
-- [ ] Configurar serviço de envio de e-mail.
-- [ ] Criar template de redefinição de senha.
-- [ ] Criar template de pedido aguardando aprovação.
-- [ ] Criar template de pedido aprovado ou rejeitado.
-- [ ] Enviar notificação para perfis aprovadores quando uma etapa ficar pendente.
-- [ ] Evitar envio duplicado de e-mails em retentativas.
-
-## Observabilidade E Operação
-
-- [ ] Criar logs de auditoria para ações críticas.
-- [ ] Adicionar métricas básicas de latência, erros, autenticações e aprovações.
-- [ ] Criar endpoint de readiness verificando banco e cache.
-- [ ] Configurar tratamento global de exceções.
-- [ ] Definir política de backup e restauração do banco.
-- [ ] Definir rotina de limpeza para tokens expirados e registros temporários.
-- [ ] Documentar comandos de setup, migration, seed, teste e execução local.
-
-## Documentação Da API
-
-- [ ] Criar especificação OpenAPI/Swagger.
-- [ ] Documentar autenticação e refresh token.
-- [ ] Documentar payloads das rotas principais.
-- [ ] Documentar códigos de erro padronizados.
-- [ ] Documentar fluxo de aprovação de pedidos com exemplos.
-- [ ] Documentar variáveis de ambiente obrigatórias.
-
-## Testes
-
-- [ ] Configurar banco de teste isolado.
-- [ ] Criar testes unitários para serviços de autenticação, senha e autorização por perfil.
-- [ ] Criar testes de integração para rotas de autenticação.
-- [ ] Criar testes de integração para fluxo completo de aprovação de pedido.
-- [ ] Criar testes de validação para payloads inválidos.
-- [ ] Criar testes para seleção de política de aprovação por valor e moeda.
-- [ ] Criar testes para revogação de perfil e bloqueio de aprovação.
-- [ ] Criar testes de seed idempotente.
+- [ ] Can an account have multiple owners?
+- [ ] Is discount monetary, percentage-based, or both? The current baseline treats
+      it as a monetary line discount.
+- [ ] Is inventory reserved before or after order approval?
+- [ ] Which order states permit editing, cancellation, and resubmission?
+- [ ] What are the retention periods for sessions, reset tokens, and audit data?
