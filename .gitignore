@@ -7,6 +7,9 @@
 # Dependency directories
 node_modules/
 
+# TypeScript build output
+dist/
+
 # Optional npm cache directory
 .npm
 
