@@ -1,5 +1,5 @@
 import { defineConfig } from "prisma/config";
-import { env } from "./src/env";
+import { environment } from "./src/config/environment";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -9,6 +9,6 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: env.DATABASE_URL,
+    url: environment.DATABASE_URL,
   },
 });
