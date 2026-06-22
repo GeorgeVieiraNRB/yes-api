@@ -1,6 +1,6 @@
-import { PrismaClient } from "../generated/prisma/client";
+import { PrismaClient } from "../src/generated/prisma/client";
 import bcrypt from "bcrypt";
-import { env } from "../src/env";
+import { environment } from "../src/config/environment";
 
 const prisma = new PrismaClient();
 
@@ -188,8 +188,8 @@ async function upsertOrder(data: {
 
 async function main() {
   const passwordHash = await bcrypt.hash(
-    env.ADMIN_PASSWORD,
-    env.PASSWORD_SALT_ROUNDS,
+    environment.ADMIN_PASSWORD,
+    environment.PASSWORD_SALT_ROUNDS,
   );
 
   const profileByName = new Map<string, { id: string; name: string }>();
@@ -226,7 +226,7 @@ async function main() {
   });
 
   const adminUser = await prisma.user.upsert({
-    where: { email: "admin@yescrm.local" },
+    where: { email: environment.ADMIN_EMAIL },
     update: {
       name: "Admin",
       surname: "YES",
@@ -240,7 +240,7 @@ async function main() {
       name: "Admin",
       surname: "YES",
       username: "admin",
-      email: "admin@yescrm.local",
+      email: environment.ADMIN_EMAIL,
       bornDate: new Date("1990-01-01T00:00:00.000Z"),
       govId: "00000000000000",
       password: passwordHash,
