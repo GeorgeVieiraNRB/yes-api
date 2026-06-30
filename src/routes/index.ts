@@ -1,7 +1,10 @@
 import { Router } from "express";
-import { isUp } from "../controllers/is-up";
+import { authRoutes } from "./auth";
+import { healthRoutes } from "./health";
+import { userRoutes } from "./users";
 
 export const router = Router();
 
-router.get("/", isUp);
-router.get("/isup", isUp);
+router.use(healthRoutes);
+router.use("/api/v1/auth", authRoutes);
+router.use("/api/v1/users", userRoutes);
