@@ -7,15 +7,15 @@ constraint. A schema gap is called out when a migration is still required.
 
 ## Domain map
 
-| Area | Main models | Responsibility |
-| --- | --- | --- |
-| Identity | `User`, `Profile`, `UserProfile` | Authentication and access profiles |
-| Customers | `Account`, `Contact`, `Address` | Companies, people, ownership, and addresses |
-| Catalog | `Product`, `PriceCatalog`, `PriceCatalogProduct` | Products and commercial prices |
-| Sales | `Quote`, `QuoteProduct`, `Order`, `PaymentCondition`, `Status` | Quoting and order lifecycle |
-| Approval | `ApprovalPolicy`, `ApprovalStep`, `OrderApproval`, `ApprovalDecision` | Ordered, auditable approval workflow |
-| Logistics | `Branch`, `Storage`, `StorageProduct` | Branches, warehouses, and inventory balances |
-| Manufacturing | `Structure`, `StructureProduct` | Bill of materials for a finished product |
+| Area          | Main models                                                           | Responsibility                               |
+| ------------- | --------------------------------------------------------------------- | -------------------------------------------- |
+| Identity      | `User`, `Profile`, `UserProfile`                                      | Authentication and access profiles           |
+| Customers     | `Account`, `Contact`, `Address`                                       | Companies, people, ownership, and addresses  |
+| Catalog       | `Product`, `PriceCatalog`, `PriceCatalogProduct`                      | Products and commercial prices               |
+| Sales         | `Quote`, `QuoteProduct`, `Order`, `PaymentCondition`, `Status`        | Quoting and order lifecycle                  |
+| Approval      | `ApprovalPolicy`, `ApprovalStep`, `OrderApproval`, `ApprovalDecision` | Ordered, auditable approval workflow         |
+| Logistics     | `Branch`, `Storage`, `StorageProduct`                                 | Branches, warehouses, and inventory balances |
+| Manufacturing | `Structure`, `StructureProduct`                                       | Bill of materials for a finished product     |
 
 ## Identity and access
 
@@ -27,7 +27,8 @@ constraint. A schema gap is called out when a migration is still required.
    Authorization must not trust roles supplied by a client (**application**).
 4. Only active `UserProfile` assignments grant access. Revoking a profile sets
    `isActive = false` and `revokedAt`; it does not delete the audit record
-   (**application**).
+   (**application**). The current route authorization middleware checks active
+   persisted profiles for protected profile-based routes.
 5. Login must be blocked for disabled users. The current schema has no
    `User.isActive` field, so this rule requires a migration (**schema gap**).
 6. Refresh tokens must be random, stored only as hashes, rotated after use, and
@@ -114,8 +115,9 @@ constraint. A schema gap is called out when a migration is still required.
 - List endpoints use pagination with a bounded page size and deterministic sort.
 - Critical events are auditable: login failures, profile changes, password
   changes, order submissions, approval decisions, and inventory movements.
-- API errors follow one shape: `code`, `message`, optional `details`, and
-  `requestId`.
+- API responses currently follow one envelope: `success`, `message`, optional
+  `data`, and nullable `error.message`. A richer centralized error contract is
+  still planned.
 
 ## Decisions still needed
 

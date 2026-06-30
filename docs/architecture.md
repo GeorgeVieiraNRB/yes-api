@@ -26,20 +26,37 @@ src/
   config/
     environment.ts
   controllers/
-    health.ts
+    auth.ts
+    is-ready.ts
+    is-up.ts
+    users.ts
   database/
     prisma-client.ts
   generated/
     prisma/                    # Generated; never edit or commit
   middlewares/
+    authorization.ts
     auth.ts
+    validate.ts
+  models/
+    users.ts
   routes/
+    auth.ts
+    health.ts
     index.ts
+    users.ts
   security/
     access-token.ts
     password.ts
+  services/
+    auth.ts
+    users.ts
   types/
     auth.ts
+    response.ts
+  validators/
+    auth.ts
+    users.ts
 ```
 
 ### Directory responsibilities
@@ -50,52 +67,56 @@ src/
 | `controllers` | HTTP request/response orchestration | Prisma queries or business decisions |
 | `database` | Prisma Client creation and lifecycle | Domain-specific queries |
 | `middlewares` | Cross-cutting Express request checks | Feature workflows |
+| `models` | Domain-oriented persistence queries | HTTP request/response handling |
 | `routes` | Paths, middleware order, and controllers | Business logic |
 | `security` | Password hashing and token primitives | Login/session workflows |
+| `services` | Use cases and business rules | Express response formatting |
 | `types` | Shared TypeScript contracts | Runtime behavior |
+| `validators` | Zod schemas for request params, query, and body | Express response handling |
 | `generated` | Generated Prisma Client | Handwritten code |
 
 The former generic `modules` directory was removed because it mixed security,
 Express middleware, and types. Focused names make ownership visible without
 opening the file.
 
-## Growth structure
+## Naming and growth
 
 Add folders and files when the first real feature requires them:
 
 ```text
 src/
   controllers/
-    auth-controller.ts
-    user-controller.ts
-    order-controller.ts
+    auth.ts
+    users.ts
+    orders.ts
   models/
-    user-model.ts
-    order-model.ts
-    approval-model.ts
+    users.ts
+    orders.ts
+    approvals.ts
   routes/
-    auth-routes.ts
-    user-routes.ts
-    order-routes.ts
+    auth.ts
+    users.ts
+    orders.ts
     index.ts
   services/
-    auth-service.ts
-    order-service.ts
-    approval-service.ts
+    auth.ts
+    orders.ts
+    approvals.ts
   validators/
-    auth-validator.ts
-    order-validator.ts
+    auth.ts
+    orders.ts
 ```
 
-Use feature names in filenames and keep the layer in the directory name. The
-top-level MVC folders are easier to navigate at this scale than nesting every
-feature inside another container directory.
+Use short feature names in filenames because the parent directory already names
+the layer. The top-level MVC folders are easier to navigate at this scale than
+nesting every feature inside another container directory.
 
 ### Request flow
 
 ```text
 route
-  -> validation/authentication middleware
+  -> authentication/authorization middleware
+  -> validation middleware
   -> controller
   -> service
   -> model
@@ -122,7 +143,7 @@ should be:
 6. not-found middleware;
 7. centralized error middleware.
 
-`server.ts` starts the HTTP listener and will own graceful shutdown. On
+`server.ts` starts the HTTP listener and must own graceful shutdown. On
 `SIGINT`/`SIGTERM`, it must stop accepting requests and disconnect the exported
 client from `database/prisma-client.ts`.
 
@@ -132,18 +153,29 @@ client from `database/prisma-client.ts`.
 ## Public, protected, and versioned routes
 
 Health and operational endpoints are not versioned because they describe the
-running service, not the business API:
+running service, not the business API. The current operational endpoints are:
 
 ```text
-GET /health
-GET /ready
+GET /is-up
+GET /                 # Temporary alias
+GET /is-ready
 ```
 
-Business routes are mounted below `/api/v1`. Version the external contract, not
-controller or model directories. A future breaking contract can be mounted at
-`/api/v2` while reusing the same services and models.
+`GET /is-up` and `/` are public liveness checks. `GET /is-ready` checks database
+readiness and currently requires Bearer authentication plus the `ADMIN` profile.
 
-Keep route files organized by feature (`auth-routes.ts`, `user-routes.ts`), not
+The target operational baseline remains:
+
+```text
+GET /is-up
+GET /is-ready
+```
+
+Business routes should be mounted below `/api/v1`. Version the external
+contract, not controller or model directories. A future breaking contract can be
+mounted at `/api/v2` while reusing the same services and models.
+
+Keep route files organized by feature (`auth.ts`, `users.ts`), not
 in `public/` and `private/` directories. The access boundary belongs to router
 composition. When feature routes exist, `routes/index.ts` should follow this
 shape:
@@ -152,7 +184,7 @@ shape:
 const publicV1Routes = Router();
 const protectedV1Routes = Router();
 
-publicV1Routes.use("/auth", publicAuthRoutes);
+publicV1Routes.use("/auth", authRoutes);
 
 protectedV1Routes.use(authenticate);
 protectedV1Routes.get("/auth/me", getCurrentUser);
@@ -163,13 +195,9 @@ router.use("/api/v1", publicV1Routes, protectedV1Routes);
 ```
 
 This gives protected routes a default-deny boundary: anything mounted on
-`protectedV1Routes` passes through authentication. Authorization by profile stays
-closer to each route because required profiles differ by operation. Login,
-refresh, and password-reset requests are explicitly public; logout and `/me` are
-protected.
-
-Do not create these future route/controller files until their use cases are
-implemented. The current `routes/index.ts` contains only the health routes.
+`protectedV1Routes` passes through authentication. The current implementation
+already mounts auth and user routes under `/api/v1`, while keeping route-level
+authorization close to each operation because required profiles differ.
 
 ## Models and Prisma
 
@@ -193,10 +221,10 @@ Production dependencies are installed with `npm ci --omit=dev`. Generate/build o
 the deployment platform, or explicitly configure Prisma binary targets when the
 build and runtime platforms differ.
 
-Do not create one class per Prisma table merely to satisfy the word “Model.” Add
+Do not create one class per Prisma table merely to satisfy the word "Model." Add
 a model module when the application needs a stable data-access boundary. Prefer
-models aligned to business aggregates, for example `order-model.ts` can own order
-header, lines, and approval-loading queries.
+models aligned to business aggregates, for example `order-model.ts` can own
+order header, lines, and approval-loading queries.
 
 Multi-record business transitions belong in services and use Prisma transactions.
 Approval submission, approval decisions, and inventory reservation are examples.
@@ -208,24 +236,28 @@ Security primitives and business workflows are separate:
 - `security/password.ts` hashes and compares passwords;
 - `security/access-token.ts` signs short-lived access tokens;
 - `middlewares/auth.ts` validates Bearer tokens for protected routes;
-- the future `auth-service.ts` will perform login, refresh rotation, logout, and
-  session revocation;
-- the future `auth-controller.ts` will expose those workflows over HTTP.
+- `middlewares/authorization.ts` checks self-ownership and active persisted
+  profiles;
+- `services/auth.ts` currently performs email/password login and creates an
+  access token;
+- `controllers/auth.ts` exposes login over HTTP;
+- refresh rotation, logout, session revocation, and `/auth/me` are not
+  implemented yet.
 
 Recommended request chain:
 
 ```text
-authenticate -> load active profiles -> authorize -> validate -> controller
+authenticate -> authorize -> validate -> controller
 ```
 
-Authorization must use active profiles from persistence or a short-lived cache,
-not roles supplied by the request.
+Authorization uses active `UserProfile` records from persistence. Do not trust
+roles or profile names supplied by a request body or query string.
 
 ## Planned route baseline
 
 ```text
-GET    /health
-GET    /ready
+GET    /is-up
+GET    /is-ready
 
 POST   /api/v1/auth/login
 POST   /api/v1/auth/refresh
@@ -234,7 +266,9 @@ GET    /api/v1/auth/me
 POST   /api/v1/auth/forgot-password
 POST   /api/v1/auth/reset-password
 
-/api/v1/users
+GET    /api/v1/users
+PATCH  /api/v1/users/:id/password
+PATCH  /api/v1/users/another/:id/password
 /api/v1/profiles
 /api/v1/accounts
 /api/v1/contacts
@@ -247,6 +281,11 @@ POST   /api/v1/auth/reset-password
 /api/v1/storages
 ```
 
+Password changes should use a dedicated action such as
+`PATCH /api/v1/users/:id/password`, not a generic update route that happens to
+accept only `password`. The current self-service route enforces ownership, and
+the separate admin route enforces the `ADMIN` profile.
+
 ## API conventions
 
 - Use `camelCase` JSON, UUID path parameters, UTC timestamps, and ISO currency
@@ -254,8 +293,8 @@ POST   /api/v1/auth/reset-password
 - Validate and normalize all external input before the controller.
 - Return `401` for missing/invalid identity and `403` for insufficient access.
 - Return `409` for uniqueness conflicts and invalid state transitions.
-- Use a standard error body with `code`, `message`, optional `details`, and
-  `requestId`.
+- Use the current `ApiResponse` envelope: `success`, `message`, optional `data`,
+  and nullable `error.message`.
 - Map database records to response contracts instead of returning Prisma records
   blindly.
 
@@ -266,10 +305,11 @@ Use Zod for environment, path, query, and body schemas. Zod is preferred over
 TypeScript types, reusable parsing outside Express, and structured errors that can
 feed the global API error format.
 
-Create `validators/` when the first feature payload is implemented. A validation
-middleware should accept a Zod schema, parse `{ params, query, body }`, replace
-inputs with normalized values, and forward failures to the central error handler.
-Do not add ad-hoc validation chains inside route files.
+The current `validators/` directory contains schemas for auth and user routes.
+`middlewares/validate.ts` accepts Zod schemas for `{ params, query, body }`,
+replaces request values with parsed values, and returns the standard
+`ApiResponse` validation error body. Do not add ad-hoc validation chains inside
+controllers.
 
 ## Testing
 

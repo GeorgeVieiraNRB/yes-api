@@ -12,14 +12,19 @@ currently has:
 
 - a Prisma schema, initial migration, and idempotent development seed;
 - centralized environment validation with Zod;
-- a minimal Express server;
-- an initial MVC folder structure with separate application bootstrap;
-- password and access-token helpers;
-- initial request-validation middleware.
+- an Express server with separate application and process bootstrap;
+- an MVC-style flow through routes, controllers, services, models, and Prisma;
+- password hashing and short-lived JWT access-token helpers;
+- Zod request validation for login and password-change payloads;
+- profile and self-ownership authorization middleware;
+- a public login endpoint and protected user-list/password endpoints;
+- unversioned liveness and readiness endpoints at `GET /is-up` and
+  `GET /is-ready`.
 
-Routes, use cases, authorization, refresh sessions, tests, and production
-hardening are not implemented yet. See [docs/todo.md](docs/todo.md) for the
-delivery order.
+These endpoints are an early vertical slice, not a finished authentication
+system. Refresh sessions, centralized API error handling, tests, graceful
+shutdown, and production hardening are still missing. See [docs/todo.md](docs/todo.md)
+for the delivery order.
 
 ## Stack decision
 
@@ -68,6 +73,10 @@ validated on startup by `src/config/environment.ts`. Do not commit `.env`.
 | `npm run prisma:studio` | Open Prisma Studio |
 | `npm run seed` | Insert the initial admin and sample CRM data |
 
+There are not yet working format, lint, type-check, or test scripts for CI. The
+existing `test` script intentionally exits with an error until a test runner is
+selected.
+
 The seed reads `ADMIN_EMAIL` and `ADMIN_PASSWORD` from the environment and also
 creates the base profiles `ADMIN`, `SALES`, `FINANCE`, `MANAGER`, and
 `LOGISTICS`.
@@ -92,15 +101,32 @@ src/
   controllers/      MVC request handlers
   database/         Prisma Client lifecycle
   middlewares/      Express request pipeline
+  models/           Prisma-backed data-access functions
   routes/           URL-to-controller mapping
   security/         Password and token primitives
+  services/         Application use cases and business rules
   types/            Shared TypeScript contracts
+  validators/       Zod request schemas
 ```
 
-Prisma models currently provide the MVC Model foundation. Domain-specific
-`models`, `services`, and `validators` should be added only as routes and business
-use cases are implemented; empty placeholder directories are intentionally
-avoided.
+The first implemented flow covers login, listing users, and changing a password.
+New files should continue to be added with real use cases; empty placeholder
+directories are intentionally avoided.
+
+## Current HTTP endpoints
+
+| Method | Path | Access | Status |
+| --- | --- | --- | --- |
+| `GET` | `/` | Public | Liveness alias |
+| `GET` | `/is-up` | Public | Liveness |
+| `GET` | `/is-ready` | Bearer token + `ADMIN` profile | Database readiness |
+| `POST` | `/api/v1/auth/login` | Public | Initial login with normalized email/password |
+| `GET` | `/api/v1/users` | Bearer token + `ADMIN` profile | Returns up to 20 users |
+| `PATCH` | `/api/v1/users/:id/password` | Bearer token + same user | Changes the authenticated user's password |
+| `PATCH` | `/api/v1/users/another/:id/password` | Bearer token + `ADMIN` profile | Changes another user's password |
+
+Business routes are mounted under `/api/v1`. Operational routes stay unversioned
+because they describe the running service, not a client-facing business contract.
 
 ## Production artifact
 
