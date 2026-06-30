@@ -3,6 +3,7 @@ import type { ParamsDictionary } from "express-serve-static-core";
 import { findUsers } from "../models/users";
 import { changeUserPassword } from "../services/users";
 import type { ApiResponse } from "../types/response";
+import type { ChangePasswordBody, UserIdParams } from "../validators/users";
 
 type ListUsersResponse = Awaited<ReturnType<typeof findUsers>>;
 
@@ -21,29 +22,12 @@ export const listUsers: RequestHandler<
 };
 
 export const updateUserPassword: RequestHandler<
-  ParamsDictionary,
-  ApiResponse
+  UserIdParams,
+  ApiResponse,
+  ChangePasswordBody
 > = async (request, response): Promise<void> => {
   const { id } = request.params;
-  const { password } = request.body ?? {};
-
-  if (typeof id !== "string" || id.length === 0) {
-    response.status(400).json({
-      success: false,
-      message: "User ID is required",
-      error: { message: "User ID is required" },
-    });
-    return;
-  }
-
-  if (typeof password !== "string" || password.length === 0) {
-    response.status(400).json({
-      success: false,
-      message: "Password is required",
-      error: { message: "Password is required" },
-    });
-    return;
-  }
+  const { password } = request.body;
 
   const { statusCode, body } = await changeUserPassword(id, password);
   response.status(statusCode).json(body);

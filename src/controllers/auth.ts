@@ -2,26 +2,19 @@ import type { RequestHandler } from "express";
 import type { ParamsDictionary } from "express-serve-static-core";
 import { authenticateUser } from "../services/auth";
 import type { ApiResponse } from "../types/response";
+import type { LoginBody } from "../validators/auth";
 
 type LoginResponse = NonNullable<Awaited<ReturnType<typeof authenticateUser>>>;
 
 export const login: RequestHandler<
   ParamsDictionary,
-  ApiResponse<LoginResponse>
+  ApiResponse<LoginResponse>,
+  LoginBody
 > = async (
   request,
   response,
 ): Promise<void> => {
-  const { email, password } = request.body ?? {};
-
-  if (typeof email !== "string" || typeof password !== "string") {
-    response.status(400).json({
-      success: false,
-      message: "Email and password are required",
-      error: { message: "Email and password are required" },
-    });
-    return;
-  }
+  const { email, password } = request.body;
 
   const authentication = await authenticateUser(email, password);
 
