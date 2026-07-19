@@ -99,7 +99,18 @@ usable.
 - [x] Prevent authenticated users from changing other users' passwords through
       the self-service endpoint.
 - [x] Enforce self-service ownership for password changes.
-- [x] Add active-profile authorization middleware.
+- [x] Add active-profile authorization middleware.- [ ] Define canonical system profiles in one application module.
+- [ ] Derive the system-profile name type from the canonical profile definitions.
+- [ ] Make the profile seed import canonical system profiles instead of defining profile values locally.
+- [ ] Make route authorization use canonical profile constants instead of raw strings.
+- [ ] Type `authorizeProfiles` to accept only known system-profile names.
+- [ ] Treat active `ADMIN` as a superuser override in profile authorization.
+- [ ] Change the bootstrap admin seed to assign only the `ADMIN` profile.
+- [ ] Decide whether approval decisions also allow the `ADMIN` superuser override.
+- [ ] Document that profile codes are stable authorization identifiers.
+- [ ] Add tests for typed/profile-based authorization behavior.
+- [ ] Add tests for `ADMIN` superuser authorization.
+- [ ] Add tests proving revoked `ADMIN` does not grant superuser access.
 - [x] Decide that user listing is admin-only for the current implementation.
 - [x] Protect user listing with the `ADMIN` profile.
 - [x] Add an admin-only password-change route for changing another user's
