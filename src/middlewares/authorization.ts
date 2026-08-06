@@ -11,6 +11,13 @@ const errorResponse = (message: string): ApiResponse => ({
 
 const unauthorizedResponse = errorResponse("Unauthorized");
 
+const findAuthorizationUser = async (userId: string) => {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { isSuperUser: true },
+  });
+};
+
 export const authorizeSelf = (
   paramName = "id",
 ): RequestHandler<ParamsDictionary, ApiResponse> => {
@@ -39,11 +46,25 @@ export const authorizeSelf = (
 };
 
 export const authorizeProfiles = (
-  profiles: string[],
+  profiles: string[] = [],
 ): RequestHandler<ParamsDictionary, ApiResponse> => {
   return async (request, response, next): Promise<void> => {
     if (!request.user) {
       response.status(401).json(unauthorizedResponse);
+      return;
+    }
+
+    const user = await findAuthorizationUser(request.user.id);
+
+    if (user?.isSuperUser) {
+      next();
+      return;
+    }
+
+    if (profiles.length === 0) {
+      response
+        .status(403)
+        .json(errorResponse("Superuser or Profile access is required"));
       return;
     }
 
@@ -60,7 +81,9 @@ export const authorizeProfiles = (
     });
 
     if (!userProfile) {
-      response.status(403).json(errorResponse("Required profile was not found"));
+      response
+        .status(403)
+        .json(errorResponse("Required profile was not found"));
       return;
     }
 
