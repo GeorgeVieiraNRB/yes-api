@@ -12,6 +12,6 @@ healthRoutes.get("/is-up", isUp);
 healthRoutes.get(
   "/is-ready",
   authenticate,
-  authorizeProfiles(["ADMIN"]),
+  authorizeProfiles(),
   isReady,
 );

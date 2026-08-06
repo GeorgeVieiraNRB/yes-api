@@ -10,7 +10,7 @@ import {
 
 export const userRoutes = Router();
 
-userRoutes.get("/", authenticate, authorizeProfiles(["ADMIN"]), listUsers);
+userRoutes.get("/", authenticate, authorizeProfiles(), listUsers);
 
 userRoutes.patch(
   "/:id/password",
@@ -30,6 +30,6 @@ userRoutes.patch(
     params: userIdParamsSchema,
     body: changePasswordBodySchema,
   }),
-  authorizeProfiles(["ADMIN"]),
+  authorizeProfiles(),
   updateUserPassword,
 );
