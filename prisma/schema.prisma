@@ -51,7 +51,9 @@ model User {
   phoneNumber          String?   @db.VarChar(30)
   passwordResetToken   String?   @unique
   passwordResetExpires DateTime?
-
+  isSuperUser          Boolean   @default(false)
+  isActive             Boolean   @default(true)
+  
   addressId String  @db.Uuid
   address   Address @relation(fields: [addressId], references: [id])
 

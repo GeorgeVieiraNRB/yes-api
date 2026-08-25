@@ -31,8 +31,17 @@ usable.
       `PATCH /api/v1/users/:id/password`.
 - [x] Added self-ownership authorization middleware.
 - [x] Added active-profile authorization middleware.
-- [x] Protected user listing with the `ADMIN` profile.
-- [x] Added an admin password-change route guarded by profile authorization.
+- [x] Added `User.isSuperUser`.
+- [x] Removed the requirement to precreate an `ADMIN` profile.
+- [x] Kept the initial seeded business profiles for sample approval data.
+- [x] Stopped assigning every profile to the bootstrap admin user.
+- [x] Seeded the bootstrap admin user with `isSuperUser = true`.
+- [x] Replaced admin-only profile guards with optional-profile authorization.
+- [x] Loaded superuser status from persistence during authorization.
+- [x] Kept profile authorization dynamic through persisted records.
+- [x] Protected user listing with optional-profile authorization.
+- [x] Added an admin password-change route guarded by optional-profile
+      authorization.
 - [x] Added database-aware `GET /is-ready`.
 
 ## Priorities
@@ -47,7 +56,7 @@ usable.
 
 - [x] Create the initial Prisma schema.
 - [x] Create the initial migration.
-- [x] Create an idempotent seed for profiles.
+- [x] Create an idempotent seed for sample business profiles.
 - [x] Create an idempotent seed for sample CRM data.
 - [x] Centralize environment variables.
 - [x] Validate environment variables.
@@ -90,22 +99,40 @@ usable.
 
 ## 2. Authentication and users
 
+### 2.1 Login and access tokens
+
 - [x] Implement initial login by email.
 - [x] Issue a short-lived access token.
 - [x] Implement initial Bearer access-token authentication.
-- [x] Implement an initial bounded user list.
-- [x] Implement an initial password-change use case.
-- [x] Move password changes to `PATCH /api/v1/users/:id/password`.
-- [x] Prevent authenticated users from changing other users' passwords through
-      the self-service endpoint.
-- [x] Enforce self-service ownership for password changes.
+- [x] Add `User.isActive`.
+- [x] Block disabled users during login.
+- [ ] Implement `GET /api/v1/auth/me`.
+- [ ] Ensure `/auth/me` never exposes sensitive user fields.
+- [ ] Support the final email-or-username login policy.
+- [ ] Add rate limits to login.
+
+### 2.2 Authorization and profiles
+
 - [x] Add active-profile authorization middleware.
-- [x] Decide that user listing is admin-only for the current implementation.
-- [x] Protect user listing with the `ADMIN` profile.
-- [x] Add an admin-only password-change route for changing another user's
-      password.
-- [ ] Add `User.isActive`.
-- [ ] Block disabled users during login.
+- [x] Add `User.isSuperUser`.
+- [x] Seed the bootstrap admin user with `isSuperUser = true`.
+- [x] Replace admin-only profile guards with optional-profile authorization.
+- [x] Update authorization middleware to allow superusers before checking
+      profiles.
+- [x] Ensure superuser status is loaded from persistence, not trusted from
+      tokens or request input.
+- [x] Keep profile authorization dynamic through persisted `Profile` and
+      `UserProfile` records.
+- [x] Remove the requirement to precreate an `ADMIN` profile.
+- [x] Stop assigning every profile to the bootstrap admin user.
+- [x] Decide which initial business profiles are still useful for seed/sample
+      approval data.
+- [ ] Allow `isSuperUser` to satisfy approval-step profile checks.
+- [ ] Document the difference between superuser access and business profile
+      assignment.
+
+### 2.3 Refresh sessions
+
 - [ ] Add a `RefreshSession` model.
 - [ ] Hash refresh-session tokens.
 - [ ] Rotate refresh sessions.
@@ -113,21 +140,40 @@ usable.
 - [ ] Revoke refresh sessions on logout.
 - [ ] Implement `POST /api/v1/auth/refresh`.
 - [ ] Implement `POST /api/v1/auth/logout`.
-- [ ] Implement `GET /api/v1/auth/me`.
-- [ ] Ensure `/auth/me` never exposes sensitive user fields.
-- [ ] Support the final email-or-username login policy.
+
+### 2.4 Password recovery
+
 - [ ] Implement forgot-password requests with generic responses.
 - [ ] Store only hashed password-reset tokens.
 - [ ] Add password-reset token expiry.
 - [ ] Enforce single-use password-reset tokens.
 - [ ] Revoke user sessions after password reset.
-- [ ] Add rate limits to login.
 - [ ] Add rate limits to refresh.
 - [ ] Add rate limits to password-reset endpoints.
+
+### 2.5 User management
+
+- [x] Implement an initial bounded user list.
+- [x] Implement an initial password-change use case.
+- [x] Move password changes to `PATCH /api/v1/users/:id/password`.
+- [x] Prevent authenticated users from changing other users' passwords through
+      the self-service endpoint.
+- [x] Enforce self-service ownership for password changes.
+- [x] Decide that user listing is superuser-only for the current implementation.
+- [x] Protect user listing with optional-profile authorization.
+- [x] Add a superuser-only password-change route for changing another user's
+      password.
 - [ ] Implement remaining user CRUD.
 - [ ] Implement user activation/deactivation.
 - [ ] Implement auditable profile assignment.
 - [ ] Implement auditable profile revocation.
+
+### 2.6 Authorization tests
+
+- [ ] Add tests for superuser route authorization.
+- [ ] Add tests for normal profile-based authorization.
+- [ ] Add tests proving non-superusers still need required profiles.
+- [ ] Add tests proving revoked profiles do not grant access.
 
 ## 3. Operational hardening
 

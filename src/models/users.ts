@@ -21,6 +21,7 @@ export const findUserCredentialsByEmail = (email: string) =>
       username: true,
       email: true,
       password: true,
+      isActive: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -50,4 +51,10 @@ export const findUserById = (id: string) =>
       createdAt: true,
       updatedAt: true,
     },
+  });
+
+export const findUserStatusById = (id: string) =>
+  prisma.user.findUnique({
+    where: { id },
+    select: { isActive: true },
   });

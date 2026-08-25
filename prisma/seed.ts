@@ -6,11 +6,6 @@ const prisma = new PrismaClient();
 
 const profiles = [
   {
-    name: "ADMIN",
-    description:
-      "Full administrative access to system settings and master data.",
-  },
-  {
     name: "SALES",
     description: "Commercial profile for accounts, quotes, and orders.",
   },
@@ -235,6 +230,7 @@ async function main() {
       password: passwordHash,
       phoneNumber: "+5511999999999",
       addressId: adminAddress.id,
+      isSuperUser: true,
     },
     create: {
       name: "Admin",
@@ -246,27 +242,9 @@ async function main() {
       password: passwordHash,
       phoneNumber: "+5511999999999",
       addressId: adminAddress.id,
+      isSuperUser: true,
     },
   });
-
-  for (const profile of profileByName.values()) {
-    await prisma.userProfile.upsert({
-      where: {
-        userId_profileId: {
-          userId: adminUser.id,
-          profileId: profile.id,
-        },
-      },
-      update: {
-        isActive: true,
-        revokedAt: null,
-      },
-      create: {
-        userId: adminUser.id,
-        profileId: profile.id,
-      },
-    });
-  }
 
   const branchAddress = await upsertAddress({
     name: "YES Headquarters",

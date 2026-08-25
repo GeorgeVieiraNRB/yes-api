@@ -5,7 +5,11 @@ import { comparePasswords } from "../security/password";
 export const authenticateUser = async (email: string, password: string) => {
   const user = await findUserCredentialsByEmail(email);
 
-  if (!user || !(await comparePasswords(password, user.password))) {
+  if (
+    !user ||
+    !user.isActive ||
+    !(await comparePasswords(password, user.password))
+  ) {
     return null;
   }
 
