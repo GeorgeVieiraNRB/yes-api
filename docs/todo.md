@@ -99,15 +99,20 @@ usable.
 
 ## 2. Authentication and users
 
+### 2.1 Login and access tokens
+
 - [x] Implement initial login by email.
 - [x] Issue a short-lived access token.
 - [x] Implement initial Bearer access-token authentication.
-- [x] Implement an initial bounded user list.
-- [x] Implement an initial password-change use case.
-- [x] Move password changes to `PATCH /api/v1/users/:id/password`.
-- [x] Prevent authenticated users from changing other users' passwords through
-      the self-service endpoint.
-- [x] Enforce self-service ownership for password changes.
+- [x] Add `User.isActive`.
+- [x] Block disabled users during login.
+- [ ] Implement `GET /api/v1/auth/me`.
+- [ ] Ensure `/auth/me` never exposes sensitive user fields.
+- [ ] Support the final email-or-username login policy.
+- [ ] Add rate limits to login.
+
+### 2.2 Authorization and profiles
+
 - [x] Add active-profile authorization middleware.
 - [x] Add `User.isSuperUser`.
 - [x] Seed the bootstrap admin user with `isSuperUser = true`.
@@ -125,16 +130,9 @@ usable.
 - [ ] Allow `isSuperUser` to satisfy approval-step profile checks.
 - [ ] Document the difference between superuser access and business profile
       assignment.
-- [ ] Add tests for superuser route authorization.
-- [ ] Add tests for normal profile-based authorization.
-- [ ] Add tests proving non-superusers still need required profiles.
-- [ ] Add tests proving revoked profiles do not grant access.
-- [x] Decide that user listing is superuser-only for the current implementation.
-- [x] Protect user listing with optional-profile authorization.
-- [x] Add a superuser-only password-change route for changing another user's
-      password.
-- [ ] Add `User.isActive`.
-- [ ] Block disabled users during login.
+
+### 2.3 Refresh sessions
+
 - [ ] Add a `RefreshSession` model.
 - [ ] Hash refresh-session tokens.
 - [ ] Rotate refresh sessions.
@@ -142,21 +140,40 @@ usable.
 - [ ] Revoke refresh sessions on logout.
 - [ ] Implement `POST /api/v1/auth/refresh`.
 - [ ] Implement `POST /api/v1/auth/logout`.
-- [ ] Implement `GET /api/v1/auth/me`.
-- [ ] Ensure `/auth/me` never exposes sensitive user fields.
-- [ ] Support the final email-or-username login policy.
+
+### 2.4 Password recovery
+
 - [ ] Implement forgot-password requests with generic responses.
 - [ ] Store only hashed password-reset tokens.
 - [ ] Add password-reset token expiry.
 - [ ] Enforce single-use password-reset tokens.
 - [ ] Revoke user sessions after password reset.
-- [ ] Add rate limits to login.
 - [ ] Add rate limits to refresh.
 - [ ] Add rate limits to password-reset endpoints.
+
+### 2.5 User management
+
+- [x] Implement an initial bounded user list.
+- [x] Implement an initial password-change use case.
+- [x] Move password changes to `PATCH /api/v1/users/:id/password`.
+- [x] Prevent authenticated users from changing other users' passwords through
+      the self-service endpoint.
+- [x] Enforce self-service ownership for password changes.
+- [x] Decide that user listing is superuser-only for the current implementation.
+- [x] Protect user listing with optional-profile authorization.
+- [x] Add a superuser-only password-change route for changing another user's
+      password.
 - [ ] Implement remaining user CRUD.
 - [ ] Implement user activation/deactivation.
 - [ ] Implement auditable profile assignment.
 - [ ] Implement auditable profile revocation.
+
+### 2.6 Authorization tests
+
+- [ ] Add tests for superuser route authorization.
+- [ ] Add tests for normal profile-based authorization.
+- [ ] Add tests proving non-superusers still need required profiles.
+- [ ] Add tests proving revoked profiles do not grant access.
 
 ## 3. Operational hardening
 
