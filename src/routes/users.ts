@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { listUsers, updateUserPassword } from "../controllers/users";
-import { authenticate } from "../middlewares/auth";
+import { authenticate, requireActiveUser } from "../middlewares/auth";
 import { authorizeProfiles, authorizeSelf } from "../middlewares/authorization";
 import { validateRequest } from "../middlewares/validate";
 import {
@@ -10,11 +10,18 @@ import {
 
 export const userRoutes = Router();
 
-userRoutes.get("/", authenticate, authorizeProfiles(), listUsers);
+userRoutes.get(
+  "/",
+  authenticate,
+  requireActiveUser,
+  authorizeProfiles(),
+  listUsers,
+);
 
 userRoutes.patch(
   "/:id/password",
   authenticate,
+  requireActiveUser,
   validateRequest({
     params: userIdParamsSchema,
     body: changePasswordBodySchema,
@@ -26,6 +33,7 @@ userRoutes.patch(
 userRoutes.patch(
   "/another/:id/password",
   authenticate,
+  requireActiveUser,
   validateRequest({
     params: userIdParamsSchema,
     body: changePasswordBodySchema,

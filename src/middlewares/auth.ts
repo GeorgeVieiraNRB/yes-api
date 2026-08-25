@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import { environment } from "../config/environment";
+import { findUserStatusById } from "../models/users";
 import type { AuthTokenPayload } from "../types/auth";
 import type { ApiResponse } from "../types/response";
 
@@ -27,6 +28,7 @@ const errorResponse = (message: string): ApiResponse => ({
 
 const unauthorizedResponse = errorResponse("Unauthorized");
 const invalidTokenResponse = errorResponse("Invalid token");
+const disabledUserResponse = errorResponse("User account is disabled");
 
 export const authenticate: RequestHandler = (request, response, next): void => {
   const authorization = request.headers.authorization;
@@ -50,4 +52,24 @@ export const authenticate: RequestHandler = (request, response, next): void => {
   } catch {
     response.status(401).json(invalidTokenResponse);
   }
+};
+
+export const requireActiveUser: RequestHandler = async (
+  request,
+  response,
+  next,
+): Promise<void> => {
+  if (!request.user) {
+    response.status(401).json(unauthorizedResponse);
+    return;
+  }
+
+  const user = await findUserStatusById(request.user.id);
+
+  if (!user?.isActive) {
+    response.status(403).json(disabledUserResponse);
+    return;
+  }
+
+  next();
 };
