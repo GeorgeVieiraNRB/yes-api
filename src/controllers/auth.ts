@@ -1,5 +1,6 @@
 import type { RequestHandler } from "express";
 import type { ParamsDictionary } from "express-serve-static-core";
+import { unauthorized } from "../errors/api-error";
 import { authenticateUser } from "../services/auth";
 import type { ApiResponse } from "../types/response";
 import type { LoginBody } from "../validators/auth";
@@ -13,17 +14,14 @@ export const login: RequestHandler<
 > = async (
   request,
   response,
+  next,
 ): Promise<void> => {
   const { email, password } = request.body;
 
   const authentication = await authenticateUser(email, password);
 
   if (!authentication) {
-    response.status(401).json({
-      success: false,
-      message: "Invalid credentials",
-      error: { message: "Invalid credentials" },
-    });
+    next(unauthorized());
     return;
   }
 
