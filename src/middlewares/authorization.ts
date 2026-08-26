@@ -1,15 +1,8 @@
 import type { RequestHandler } from "express";
 import type { ParamsDictionary } from "express-serve-static-core";
 import { prisma } from "../database/prisma-client";
+import { badRequest, forbidden, unauthorized } from "../errors/api-error";
 import type { ApiResponse } from "../types/response";
-
-const errorResponse = (message: string): ApiResponse => ({
-  success: false,
-  message,
-  error: { message },
-});
-
-const unauthorizedResponse = errorResponse("Unauthorized");
 
 const findAuthorizationUser = async (userId: string) => {
   return prisma.user.findUnique({
@@ -21,23 +14,21 @@ const findAuthorizationUser = async (userId: string) => {
 export const authorizeSelf = (
   paramName = "id",
 ): RequestHandler<ParamsDictionary, ApiResponse> => {
-  return (request, response, next): void => {
+  return (request, _response, next): void => {
     const resourceUserId = request.params[paramName];
 
     if (!request.user) {
-      response.status(401).json(unauthorizedResponse);
+      next(unauthorized());
       return;
     }
 
     if (typeof resourceUserId !== "string" || resourceUserId.length === 0) {
-      response.status(400).json(errorResponse("User ID is required"));
+      next(badRequest("User ID is required"));
       return;
     }
 
     if (request.user.id !== resourceUserId) {
-      response
-        .status(403)
-        .json(errorResponse("You cannot access another user's resource"));
+      next(forbidden());
       return;
     }
 
@@ -48,9 +39,9 @@ export const authorizeSelf = (
 export const authorizeProfiles = (
   profiles: string[] = [],
 ): RequestHandler<ParamsDictionary, ApiResponse> => {
-  return async (request, response, next): Promise<void> => {
+  return async (request, _response, next): Promise<void> => {
     if (!request.user) {
-      response.status(401).json(unauthorizedResponse);
+      next(unauthorized());
       return;
     }
 
@@ -62,9 +53,7 @@ export const authorizeProfiles = (
     }
 
     if (profiles.length === 0) {
-      response
-        .status(403)
-        .json(errorResponse("Superuser or Profile access is required"));
+      next(forbidden());
       return;
     }
 
@@ -81,9 +70,7 @@ export const authorizeProfiles = (
     });
 
     if (!userProfile) {
-      response
-        .status(403)
-        .json(errorResponse("Required profile was not found"));
+      next(forbidden());
       return;
     }
 
