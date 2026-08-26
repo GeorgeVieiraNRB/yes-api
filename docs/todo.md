@@ -90,12 +90,12 @@ usable.
 - [x] Normalize login email before querying.
 - [x] Add Zod validation for UUID route params.
 - [x] Add Zod validation for password-change payloads.
-- [ ] Add a not-found middleware.
-- [ ] Add a centralized API error middleware.
+- [x] Add a not-found middleware.
+- [x] Add a centralized API error middleware.
 - [x] Normalize validation error responses.
-- [ ] Normalize authentication error responses.
-- [ ] Normalize authorization error responses.
-- [ ] Normalize unexpected error responses.
+- [x] Normalize authentication error responses.
+- [x] Normalize authorization error responses.
+- [x] Normalize unexpected error responses.
 
 ## 2. Authentication and users
 
